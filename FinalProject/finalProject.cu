@@ -213,7 +213,8 @@ bool runTest(int argc, char **argv)
 	getNumBlocksAndThreads(size, maxBlocks, maxThreads, numBlocks, numThreads);
 
 	// allocate mem for the result on host side
-	char *h_odata = (char *)malloc(size*sizeof(char));
+	char *h_odata1 = (char *)malloc(size*sizeof(char));
+	char *h_odata2 = (char *)malloc(size*sizeof(char));
 
 
 	printf("num of  blocks: %d \n", numBlocks);
@@ -223,13 +224,15 @@ bool runTest(int argc, char **argv)
 	// allocate device memory and data
 	char *d_idata = NULL;
 	char *d_odata = NULL;
+	
 
 	checkCudaErrors(cudaMalloc((void **)&d_idata, size*sizeof(char)));
 	checkCudaErrors(cudaMalloc((void **)&d_odata, size*sizeof(char)));
-
+	
 	// copy data directly to device memory
 	checkCudaErrors(cudaMemcpy(d_idata, h_idata, size*sizeof(char), cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpy(d_odata, h_idata, size*sizeof(char), cudaMemcpyHostToDevice));
+	
 
 	// warm-up
 	//reduce(boardHeight, boardWidth, numThreads, numBlocks, d_idata, d_odata, 1);
@@ -246,8 +249,35 @@ bool runTest(int argc, char **argv)
 
 	t_end = std::chrono::high_resolution_clock::now();
 	printf("Wall clock time passed: %f ms\n", std::chrono::duration<double, std::milli>(t_end - t_start).count());
+	bool isSame = true;
+	if (epochs%2==1)
+	{
+		gpuErrchk(cudaMemcpy(h_odata1, d_odata, size*sizeof(char), cudaMemcpyDeviceToHost));
+		
+		for (int i = 0; i < size; i++)
+		{
+			if (cpu_odata[i] != h_odata1[i])
+			{
+				isSame = false;
+				break;
 
-	gpuErrchk(cudaMemcpy(h_odata, d_odata, size*sizeof(char), cudaMemcpyDeviceToHost));
+			}
+		}
+	}
+	else
+	{
+		gpuErrchk(cudaMemcpy(h_odata2, d_idata, size*sizeof(char), cudaMemcpyDeviceToHost));
+		
+		for (int i = 0; i < size; i++)
+		{
+			if (cpu_odata[i] != h_odata2[i])
+			{
+				isSame = false;
+				break;
+
+			}
+		}
+	}
 
 	//double reduceTime = sdkGetAverageTimerValue(&timer) * 1e-3;
 	//printf("Reduction, Throughput = %.4f GB/s, Time = %.5f s, Size = %u Elements, NumDevsUsed = %d, Workgroup = %u\n",
@@ -257,21 +287,13 @@ bool runTest(int argc, char **argv)
 	//int cpu_result = reduceCPU(h_idata, size);
 	gpuErrchk(cudaPeekAtLastError());
 
-	bool isSame = true;
-	for (int i = 0; i < size; i++)
-	{
-		if (cpu_odata[i] != h_odata[i])
-		{
-			isSame = false;
-			break;
-
-		}
-	}
+	
 
 	// cleanup
 	//sdkDeleteTimer(&timer);
 	free(h_idata);
-	free(h_odata);
+	free(h_odata1);
+	free(h_odata2);
 
 	checkCudaErrors(cudaFree(d_idata));
 	checkCudaErrors(cudaFree(d_odata));
@@ -281,12 +303,6 @@ bool runTest(int argc, char **argv)
 	
 	return isSame;
 }
-
-
-
-
-
-
 
 
 

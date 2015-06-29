@@ -4,10 +4,10 @@
 #include "Utils.cuh"
 #include "finalProject_kernel.cuh"
 
-#define BOARD_WIDTH 4
-#define BOARD_HIEGHT 4
+#define BOARD_WIDTH 1000
+#define BOARD_HIEGHT 1000
 #define COLORS 16
-#define EPOCHS 2
+#define EPOCHS 101
 
 
 

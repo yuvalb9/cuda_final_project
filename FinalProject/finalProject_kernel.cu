@@ -58,14 +58,10 @@ void  reduce(int boardHeight, int boardWidth, int numThreads, int numBlocks, cha
 	for (size_t i = 0; i < epochs; i++) {
 		cudaDeviceSynchronize();
 		kernel0 << <numBlocks, numThreads >> >(d_idata, boardHeight, boardWidth, d_odata);
-		gpuErrchk(cudaPeekAtLastError());
-		gpuErrchk(cudaDeviceSynchronize());
 		std::swap(d_idata, d_odata);
-		//temp = d_odata;
-		//d_odata = d_idata;
-		//d_idata = temp;
-		
 	}
+	checkCudaErrors(cudaDeviceSynchronize());
+
 }
 
 
