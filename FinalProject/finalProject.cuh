@@ -6,8 +6,8 @@
 
 
 // total global memory is 536,870,912 => max dim is 23170*23170
-#define BOARD_WIDTH 2048	
-#define BOARD_HIEGHT 2048
+#define BOARD_WIDTH 1024	
+#define BOARD_HIEGHT 1024
 #define COLORS 16
 #define EPOCHS 200
 
