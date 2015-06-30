@@ -4,10 +4,12 @@
 #include "Utils.cuh"
 #include "finalProject_kernel.cuh"
 
-#define BOARD_WIDTH 1000
-#define BOARD_HIEGHT 1000
+
+// total global memory is 536,870,912 => max dim is 23170*23170
+#define BOARD_WIDTH 2048	
+#define BOARD_HIEGHT 2048
 #define COLORS 16
-#define EPOCHS 101
+#define EPOCHS 200
 
 
 
@@ -18,3 +20,22 @@ void getNumBlocksAndThreads(int n, int maxBlocks, int maxThreads, int &blocks, i
 
 
 #endif
+
+/*
+
+GeForce 210
+=============
+totalGlobalMem				536870912
+sharedMemPerBlock				16384
+regsPerBlock					16384
+warpSize						   32
+maxThreadsPerBlock				  512
+maxThreadsDim			{512, 512, 64}
+maxGridSize			 {65535, 65535, 1}
+multiProcessorCount					2
+maxThreadsPerMultiProcessor		 1024	int
+sharedMemPerMultiprocessor		16384	unsigned int
+regsPerMultiprocessor			16384	int
+
+
+*/

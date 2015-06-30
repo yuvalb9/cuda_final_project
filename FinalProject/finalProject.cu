@@ -103,7 +103,7 @@ char* calculateCPU(int boardHeight, int boardWidth, int colors, char * input_dat
 
 
 					int N_ROW = ((boardHeight + currRow - 1) % boardHeight);
-					int N_COL = ((boardWidth + currCol ) % boardWidth);
+					int N_COL = ((boardWidth + currCol) % boardWidth);
 					int N_POS = N_ROW*boardWidth + N_COL;
 
 
@@ -112,12 +112,12 @@ char* calculateCPU(int boardHeight, int boardWidth, int colors, char * input_dat
 					int NE_POS = NE_ROW*boardWidth + NE_COL;
 
 
-					int W_ROW = ((boardHeight + currRow ) % boardHeight);
-					int W_COL = ((boardWidth + currCol -1) % boardWidth);
+					int W_ROW = ((boardHeight + currRow) % boardHeight);
+					int W_COL = ((boardWidth + currCol - 1) % boardWidth);
 					int W_POS = W_ROW*boardWidth + W_COL;
 
 
-					int E_ROW = ((boardHeight + currRow ) % boardHeight);
+					int E_ROW = ((boardHeight + currRow) % boardHeight);
 					int E_COL = ((boardWidth + currCol + 1) % boardWidth);
 					int E_POS = E_ROW*boardWidth + E_COL;
 
@@ -158,7 +158,7 @@ char* calculateCPU(int boardHeight, int boardWidth, int colors, char * input_dat
 
 		//res_data = lastEpoch;
 	}
-	
+
 
 	return res_data;
 }
@@ -180,127 +180,81 @@ bool runTest(int argc, char **argv)
 {
 	int boardWidth = BOARD_WIDTH;
 	int boardHeight = BOARD_HIEGHT;
-	int colors = COLORS; 
+	int colors = COLORS;
 	int epochs = EPOCHS;
-
-	int maxThreads = 256;  // number of threads per block
-	int maxBlocks = 32768;
-
+	int maxThreads = 512;  // number of threads per block
+	int maxBlocks = 65535;
 	long size = boardWidth*boardHeight;
-
-
-	printf("board size %d X %d\n", boardWidth, boardHeight);
-	printf("amount of colors is %d\n", colors);
-	printf("amount of EPOCHS is %d\n", epochs);
-	
-
-	// create random input data on CPU
-	char *h_idata = generateRandomData(size, colors);
-
-
-	// calculate the CPU result 
-	
-	auto t_start = std::chrono::high_resolution_clock::now();
-	char *cpu_odata =  calculateCPU(boardHeight, boardWidth, colors, h_idata, epochs);
-	auto t_end = std::chrono::high_resolution_clock::now();
-	printf("Wall clock time passed: %f ms\n", std::chrono::duration<double, std::milli>(t_end - t_start).count());
-
-	//outputBoardToFile(cpu_odata, boardHeight, boardWidth, colors, "C:\\Users\\yuval\\Downloads\1.ppm");
-	
-	
 	int numBlocks = 0;
 	int numThreads = 0;
 	getNumBlocksAndThreads(size, maxBlocks, maxThreads, numBlocks, numThreads);
 
-	// allocate mem for the result on host side
-	char *h_odata1 = (char *)malloc(size*sizeof(char));
-	char *h_odata2 = (char *)malloc(size*sizeof(char));
-
-
+	printf("board size %d X %d\n", boardWidth, boardHeight);
+	printf("amount of colors is %d\n", colors);
+	printf("amount of EPOCHS is %d\n", epochs);
 	printf("num of  blocks: %d \n", numBlocks);
 	printf("num of  threads: %d \n", numThreads);
-	
+
+
+	// create random input data on CPU
+	char *h_idata = generateRandomData(size, colors);
+
+	// calculate the CPU result 
+	auto t_start = std::chrono::high_resolution_clock::now();
+	char *cpu_odata = calculateCPU(boardHeight, boardWidth, colors, h_idata, epochs);
+	auto t_end = std::chrono::high_resolution_clock::now();
+	printf("Wall clock time passed: %f ms\n", std::chrono::duration<double, std::milli>(t_end - t_start).count());
+
+	outputBoardToFile(cpu_odata, boardHeight, boardWidth, colors, "C:\\Users\\bercovic\\Downloads\1.ppm");
+
+
+
+
+	// allocate mem for the result on host side
+	char *h_odata = (char *)malloc(size*sizeof(char));
 
 	// allocate device memory and data
 	char *d_idata = NULL;
 	char *d_odata = NULL;
-	
-
 	checkCudaErrors(cudaMalloc((void **)&d_idata, size*sizeof(char)));
 	checkCudaErrors(cudaMalloc((void **)&d_odata, size*sizeof(char)));
-	
+
 	// copy data directly to device memory
 	checkCudaErrors(cudaMemcpy(d_idata, h_idata, size*sizeof(char), cudaMemcpyHostToDevice));
 	checkCudaErrors(cudaMemcpy(d_odata, h_idata, size*sizeof(char), cudaMemcpyHostToDevice));
-	
+
 
 	// warm-up
 	//reduce(boardHeight, boardWidth, numThreads, numBlocks, d_idata, d_odata, 1);
 
-	
-
-
-	//StopWatchInterface *timer = 0;
-	//sdkCreateTimer(&timer);
-
 	t_start = std::chrono::high_resolution_clock::now();
-
-	reduce(boardHeight, boardWidth, numThreads, numBlocks, d_idata, d_odata, epochs);
-
+	reduce(boardHeight, boardWidth, numThreads, numBlocks, &d_idata, &d_odata, epochs);
 	t_end = std::chrono::high_resolution_clock::now();
+
 	printf("Wall clock time passed: %f ms\n", std::chrono::duration<double, std::milli>(t_end - t_start).count());
+
+	gpuErrchk(cudaMemcpy(h_odata, d_idata, size*sizeof(char), cudaMemcpyDeviceToHost));
+
+
+
 	bool isSame = true;
-	if (epochs%2==1)
+	for (int i = 0; i < size; i++)
 	{
-		gpuErrchk(cudaMemcpy(h_odata1, d_odata, size*sizeof(char), cudaMemcpyDeviceToHost));
-		
-		for (int i = 0; i < size; i++)
+		if (cpu_odata[i] != h_odata[i])
 		{
-			if (cpu_odata[i] != h_odata1[i])
-			{
-				isSame = false;
-				break;
-
-			}
+			isSame = false;
+			break;
 		}
 	}
-	else
-	{
-		gpuErrchk(cudaMemcpy(h_odata2, d_idata, size*sizeof(char), cudaMemcpyDeviceToHost));
-		
-		for (int i = 0; i < size; i++)
-		{
-			if (cpu_odata[i] != h_odata2[i])
-			{
-				isSame = false;
-				break;
-
-			}
-		}
-	}
-
-	//double reduceTime = sdkGetAverageTimerValue(&timer) * 1e-3;
-	//printf("Reduction, Throughput = %.4f GB/s, Time = %.5f s, Size = %u Elements, NumDevsUsed = %d, Workgroup = %u\n",
-//		1.0e-9 * ((double)(size*sizeof(char))) / reduceTime, reduceTime, size, 1, numThreads);
-
-	// compute reference solution
-	//int cpu_result = reduceCPU(h_idata, size);
-	gpuErrchk(cudaPeekAtLastError());
-
-	
 
 	// cleanup
-	//sdkDeleteTimer(&timer);
+
 	free(h_idata);
-	free(h_odata1);
-	free(h_odata2);
+	free(h_odata);
 
 	checkCudaErrors(cudaFree(d_idata));
 	checkCudaErrors(cudaFree(d_odata));
 
-	
-	//return (gpu_result == cpu_result);
-	
 	return isSame;
 }
 
@@ -322,8 +276,10 @@ void getNumBlocksAndThreads(int n, int maxBlocks, int maxThreads, int &blocks, i
 	checkCudaErrors(cudaGetDeviceProperties(&prop, device));
 
 
-	threads = (n < maxThreads * 2) ? nextPow2((n + 1) / 2) : maxThreads;
-	blocks = (n + (threads * 2 - 1)) / (threads * 2);
+	//threads = (n < maxThreads * 2) ? nextPow2((n + 1) / 2) : maxThreads;
+	threads = (n < maxThreads) ? nextPow2(n) : prop.maxThreadsPerBlock;
+	//blocks = (n + (threads * 2 - 1)) / (threads * 2);
+	blocks = n / threads;
 
 
 	if ((float)threads*blocks >(float)prop.maxGridSize[0] * prop.maxThreadsPerBlock)
@@ -331,14 +287,14 @@ void getNumBlocksAndThreads(int n, int maxBlocks, int maxThreads, int &blocks, i
 		printf("n is too large, please choose a smaller number!\n");
 	}
 
-	if (blocks > prop.maxGridSize[0])
-	{
-		printf("Grid size <%d> excceeds the device capability <%d>, set block size as %d (original %d)\n",
-			blocks, prop.maxGridSize[0], threads * 2, threads);
+	//	if (blocks > prop.maxGridSize[0])
+	//	{
+	//		printf("Grid size <%d> excceeds the device capability <%d>, set block size as %d (original %d)\n",
+	//			blocks, prop.maxGridSize[0], threads * 2, threads);
+	//
+	//	blocks /= 2;
+	//	threads *= 2;
+	//}
 
-		blocks /= 2;
-		threads *= 2;
-	}
-
-	blocks = ( maxBlocks< blocks ? maxBlocks : blocks);
+	blocks = (maxBlocks< blocks ? maxBlocks : blocks);
 }
