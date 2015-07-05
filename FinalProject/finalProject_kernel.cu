@@ -74,15 +74,14 @@ __global__ void kernel6(char* lifeData, int worldWidth, int worldHeight, char* r
 		char currCellColor = sdata[currCellLocInSData];
 		//char nextColor = (currCellColor + 1) % colors;
 		char nextColor = (currCellColor + 1) & (colors - 1);
-
-		if ((sdata[currCellLocInSData - 4] == nextColor) ||
-			(sdata[currCellLocInSData - 3] == nextColor) ||
-			(sdata[currCellLocInSData - 2] == nextColor) ||
-			(sdata[currCellLocInSData - 1] == nextColor) ||
-			(sdata[currCellLocInSData + 1] == nextColor) ||
-			(sdata[currCellLocInSData + 2] == nextColor) ||
-			(sdata[currCellLocInSData + 3] == nextColor) ||
-			(sdata[currCellLocInSData + 4] == nextColor))
+		if (((sdata[currCellLocInSData - 4] ^ nextColor) == 0) ||
+			((sdata[currCellLocInSData - 3] ^ nextColor) == 0) ||
+			((sdata[currCellLocInSData - 2] ^ nextColor) == 0) ||
+			((sdata[currCellLocInSData - 1] ^ nextColor) == 0) ||
+			((sdata[currCellLocInSData + 1] ^ nextColor) == 0) ||
+			((sdata[currCellLocInSData + 2] ^ nextColor) == 0) ||
+			((sdata[currCellLocInSData + 3] ^ nextColor) == 0) ||
+			((sdata[currCellLocInSData + 4] ^ nextColor) == 0))
 		{
 			resultLifeData[x + yAbs] = nextColor;
 		}
@@ -90,9 +89,12 @@ __global__ void kernel6(char* lifeData, int worldWidth, int worldHeight, char* r
 		{
 			resultLifeData[x + yAbs] = currCellColor;
 		}
-
+		
 	}
 }
+
+
+
 // no % operator
 __global__ void kernel5(char* lifeData, int worldWidth, int worldHeight, char* resultLifeData)
 {
