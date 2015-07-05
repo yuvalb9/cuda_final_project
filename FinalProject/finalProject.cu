@@ -170,7 +170,8 @@ char*  generateRandomData(int size, int colors)
 	for (int i = 0; i<size; i++)
 	{
 		// Keep the numbers in the range of 0 to COLORS-1
-		data[i] = i%colors; //((int)(rand() & 0xFF)) % colors;
+		//data[i] = i%colors; 
+		data[i] = ((int)(rand() & 0xFF)) % colors;
 	}
 	return data;
 }
@@ -182,7 +183,7 @@ bool runTest(int argc, char **argv)
 	int boardHeight = BOARD_HIEGHT;
 	int colors = COLORS;
 	int epochs = EPOCHS;
-	int maxThreads = 512;  // number of threads per block
+	int maxThreads = 256;  // number of threads per block
 	int maxBlocks = 65535;
 	long size = boardWidth*boardHeight;
 	int numBlocks = 0;
@@ -205,10 +206,7 @@ bool runTest(int argc, char **argv)
 	auto t_end = std::chrono::high_resolution_clock::now();
 	printf("Wall clock time passed: %f ms\n", std::chrono::duration<double, std::milli>(t_end - t_start).count());
 
-	outputBoardToFile(cpu_odata, boardHeight, boardWidth, colors, "C:\\Users\\bercovic\\Downloads\1.ppm");
-
-
-
+	outputBoardToFile(cpu_odata, boardHeight, boardWidth, colors, "C:\\Users\\yuval\\Downloads\\1.ppm");
 
 	// allocate mem for the result on host side
 	char *h_odata = (char *)malloc(size*sizeof(char));
@@ -224,18 +222,16 @@ bool runTest(int argc, char **argv)
 	checkCudaErrors(cudaMemcpy(d_odata, h_idata, size*sizeof(char), cudaMemcpyHostToDevice));
 
 
-	// warm-up
-	//reduce(boardHeight, boardWidth, numThreads, numBlocks, d_idata, d_odata, 1);
-
 	t_start = std::chrono::high_resolution_clock::now();
-	reduce(boardHeight, boardWidth, numThreads, numBlocks, &d_idata, &d_odata, epochs);
+	for (size_t i = 0; i < 10; i++)
+	{
+		reduce(boardHeight, boardWidth, numThreads, numBlocks, &d_idata, &d_odata, epochs);
+	}
 	t_end = std::chrono::high_resolution_clock::now();
 
-	printf("Wall clock time passed: %f ms\n", std::chrono::duration<double, std::milli>(t_end - t_start).count());
+	printf("Wall clock time passed: %f ms\n", std::chrono::duration<double, std::milli>(t_end - t_start).count()/10);
 
 	gpuErrchk(cudaMemcpy(h_odata, d_idata, size*sizeof(char), cudaMemcpyDeviceToHost));
-
-
 
 	bool isSame = true;
 	for (int i = 0; i < size; i++)
@@ -281,7 +277,8 @@ void getNumBlocksAndThreads(int n, int maxBlocks, int maxThreads, int &blocks, i
 	//blocks = (n + (threads * 2 - 1)) / (threads * 2);
 	blocks = n / threads;
 
-
+	threads = 256;
+	blocks = 8;
 	if ((float)threads*blocks >(float)prop.maxGridSize[0] * prop.maxThreadsPerBlock)
 	{
 		printf("n is too large, please choose a smaller number!\n");
