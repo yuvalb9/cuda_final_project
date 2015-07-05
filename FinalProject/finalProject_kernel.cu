@@ -28,6 +28,82 @@ struct SharedMemory
 	}
 };
 
+// shared memory + less registers
+__global__ void kernel4(char* lifeData, int worldWidth, int worldHeight, char* resultLifeData)
+{
+
+	__shared__  char sdata[1024 * 3 + 6];
+
+	for (int cellId = __mul24(blockIdx.x, blockDim.x) + threadIdx.x;
+		cellId < __mul24(worldWidth , worldHeight);
+		cellId += blockDim.x * gridDim.x)
+	{
+		#define WORLD_SIZE (worldWidth * worldHeight)
+		#define X (cellId % worldWidth)
+		#define yAbs  (cellId - X)
+		#define xLeft  ((X + worldWidth - 1) % worldWidth)
+		#define xRight ((X + 1) % worldWidth)
+		#define yAbsUp  ((yAbs + WORLD_SIZE - worldWidth) % WORLD_SIZE)
+		#define yAbsDown ( (yAbs + worldWidth) % WORLD_SIZE)
+		#define currCellColor (lifeData[X + yAbs])
+		#define nextColor ((currCellColor + 1) % 16)
+
+		// load left neighbors to SM
+		sdata[(threadIdx.x << 1) + threadIdx.x + 0] = lifeData[xLeft + yAbsUp];
+		sdata[(threadIdx.x << 1) + threadIdx.x + 1] = lifeData[xLeft + yAbs];
+		sdata[(threadIdx.x << 1) + threadIdx.x + 2] = lifeData[xLeft + yAbsDown];
+
+		// if last thread - load 3 from current col and 3 from right
+		if (threadIdx.x == blockDim.x - 1)
+		{
+			sdata[(threadIdx.x << 1) + threadIdx.x + 3] = lifeData[X + yAbsUp];
+			sdata[(threadIdx.x << 1) + threadIdx.x + 4] = lifeData[X + yAbs];
+			sdata[(threadIdx.x << 1) + threadIdx.x + 5] = lifeData[X + yAbsDown];
+
+			sdata[(threadIdx.x << 1) + threadIdx.x + 6] = lifeData[xRight + yAbsUp];
+			sdata[(threadIdx.x << 1) + threadIdx.x + 7] = lifeData[xRight + yAbs];
+			sdata[(threadIdx.x << 1) + threadIdx.x + 8] = lifeData[xRight + yAbsDown];
+		}
+
+		__syncthreads();
+
+		// now we are ready to work.
+
+		// go to IF, and check neighbors in SM, and output to global memory.
+
+		#define currCellLocInSData  (4 + threadIdx.x * 3)
+		//char currCellColor = sdata[currCellLocInSData];
+
+		if ((sdata[currCellLocInSData - 4] == nextColor) ||
+			(sdata[currCellLocInSData - 3] == nextColor) ||
+			(sdata[currCellLocInSData - 2] == nextColor) ||
+			(sdata[currCellLocInSData - 1] == nextColor) ||
+			(sdata[currCellLocInSData + 1] == nextColor) ||
+			(sdata[currCellLocInSData + 2] == nextColor) ||
+			(sdata[currCellLocInSData + 3] == nextColor) ||
+			(sdata[currCellLocInSData + 4] == nextColor))
+		{
+			resultLifeData[X + yAbs] = nextColor;
+		}
+		else
+		{
+			resultLifeData[X + yAbs] = sdata[(4 + threadIdx.x * 3)];
+		}
+
+	}
+#undef X
+#undef yAbs
+#undef xLeft
+#undef xRight
+#undef yAbsUp
+#undef yAbsDown
+#undef currCellColor
+#undef nextColor
+#undef currCellLocInSData  
+#undef WORLD_SIZE
+}
+
+
 // shared memory - danny!
 __global__ void kernel3(char* lifeData, int worldWidth, int worldHeight, char* resultLifeData)
 {
@@ -35,7 +111,7 @@ __global__ void kernel3(char* lifeData, int worldWidth, int worldHeight, char* r
 	int colors = 16;
 
 	char *sdata = SharedMemory();
-	
+
 	for (int cellId = __mul24(blockIdx.x, blockDim.x) + threadIdx.x;
 		cellId < worldSize;
 		cellId += blockDim.x * gridDim.x)
@@ -182,8 +258,6 @@ __global__ void kernel1(char* lifeData, int worldWidth, int worldHeight, char* r
 		}
 
 	}
-
-}
 #undef x
 #undef yAbs
 #undef xLeft
@@ -192,6 +266,8 @@ __global__ void kernel1(char* lifeData, int worldWidth, int worldHeight, char* r
 #undef yAbsDown
 #undef currCellColor
 #undef nextColor
+}
+
 
 
 
@@ -239,7 +315,8 @@ void  reduce(int boardHeight, int boardWidth, int numThreads, int numBlocks, cha
 	char* temp;
 	for (size_t i = 0; i < epochs; i++) {
 		cudaDeviceSynchronize();
-		kernel3 << <numBlocks, numThreads, numThreads*3+6 >> >(*d_idata, boardHeight, boardWidth, *d_odata);
+		//kernel3 << <numBlocks, numThreads, numThreads*3+6 >> >(*d_idata, boardHeight, boardWidth, *d_odata);
+		kernel4 << <numBlocks, numThreads >> >(*d_idata, boardHeight, boardWidth, *d_odata);
 		std::swap(*d_idata, *d_odata);
 	}
 	checkCudaErrors(cudaDeviceSynchronize());
