@@ -277,8 +277,8 @@ void getNumBlocksAndThreads(int n, int maxBlocks, int maxThreads, int &blocks, i
 	//blocks = (n + (threads * 2 - 1)) / (threads * 2);
 	blocks = n / threads;
 
-	threads = 256;
-	blocks = 8;
+	//threads = 256;
+	//blocks = 8;
 	if ((float)threads*blocks >(float)prop.maxGridSize[0] * prop.maxThreadsPerBlock)
 	{
 		printf("n is too large, please choose a smaller number!\n");
