@@ -1,5 +1,8 @@
 # cuda_final_project<br>
 final project of cuda @ MTA.ac.il<br>
+<br><br>
+By: Danny Borohov & Yuval Bercovich<br>
+
 <br>
 <br>
 Tests results:<br>
