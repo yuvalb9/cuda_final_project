@@ -28,6 +28,20 @@
     <ClInclude Include="finalProject_kernel.cuh" />
     <ClInclude Include="Utils.cuh" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\..\..\Downloads\GPGPU Final Project.pdf">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
+    </None>
+    <None Include="..\..\..\..\..\Downloads\GPGPU Final Project.pptx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
+    </None>
+    <None Include="..\..\..\..\..\Downloads\results_cpu+kernel0-6.xlsx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</DeploymentContent>
+    </None>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{6B16C2F7-3CDC-414D-822D-15ADC5C23D87}</ProjectGuid>
     <RootNamespace>FinalProject</RootNamespace>

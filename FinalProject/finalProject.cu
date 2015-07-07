@@ -180,8 +180,8 @@ char*  generateRandomData(int size, int colors)
 bool runTest(int argc, char **argv)
 {
 	
-	int boardWidth = atoi(argv[1]);// BOARD_WIDTH;
-	int boardHeight = atoi(argv[1]);
+	int boardWidth = atoi(argv[2]);// BOARD_WIDTH;
+	int boardHeight = atoi(argv[2]);
 	int colors = COLORS;
 	int epochs = EPOCHS;
 	int maxThreads = 256;  // number of threads per block
@@ -189,7 +189,7 @@ bool runTest(int argc, char **argv)
 	long size = boardWidth*boardHeight;
 	int numBlocks = 0;
 	int numThreads = 0;
-	int kernelId = atoi(argv[2]);
+	int kernelId = atoi(argv[1]);
 	getNumBlocksAndThreads(size, maxBlocks, maxThreads, numBlocks, numThreads);
 
 	printf("board size %d X %d\n", boardWidth, boardHeight);
