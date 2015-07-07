@@ -449,15 +449,64 @@ __global__ void kernel0(char* lifeData, int worldWidth, int worldHeight, char* r
 
 
 
-void  reduce(int boardHeight, int boardWidth, int numThreads, int numBlocks, char** d_idata, char** d_odata, int epochs)
+void  reduce(int boardHeight, int boardWidth, int numThreads, int numBlocks, char** d_idata, char** d_odata, int epochs, int kernelId)
 {
 	char* temp;
-	for (size_t i = 0; i < epochs; i++) {
-		cudaDeviceSynchronize();
-		//kernel3 << <numBlocks, numThreads, numThreads*3+6 >> >(*d_idata, boardHeight, boardWidth, *d_odata);
-		kernel6 << <numBlocks, numThreads , 1024*3+6>> >(*d_idata, boardHeight, boardWidth, *d_odata);
-		std::swap(*d_idata, *d_odata);
+	switch (kernelId)
+	{
+	case 0:
+		for (size_t i = 0; i < epochs; i++) {
+			cudaDeviceSynchronize();
+			kernel0 << <numBlocks, numThreads>> >(*d_idata, boardHeight, boardWidth, *d_odata);
+			std::swap(*d_idata, *d_odata);
+		}
+		break;
+	case 1:
+		for (size_t i = 0; i < epochs; i++) {
+			cudaDeviceSynchronize();
+			kernel1 << <numBlocks, numThreads >> >(*d_idata, boardHeight, boardWidth, *d_odata);
+			std::swap(*d_idata, *d_odata);
+		}
+		break;
+	case 2:
+		for (size_t i = 0; i < epochs; i++) {
+			cudaDeviceSynchronize();
+			kernel2 << <numBlocks, numThreads>> >(*d_idata, boardHeight, boardWidth, *d_odata);
+			std::swap(*d_idata, *d_odata);
+		}
+		break;
+	case 3:
+		for (size_t i = 0; i < epochs; i++) {
+			cudaDeviceSynchronize();
+			kernel3 << <numBlocks, numThreads, 1024 * 3 + 6 >> >(*d_idata, boardHeight, boardWidth, *d_odata);
+			std::swap(*d_idata, *d_odata);
+		}
+		break;
+	case 4:
+		for (size_t i = 0; i < epochs; i++) {
+			cudaDeviceSynchronize();
+			kernel4 << <numBlocks, numThreads, 1024 * 3 + 6 >> >(*d_idata, boardHeight, boardWidth, *d_odata);
+			std::swap(*d_idata, *d_odata);
+		}
+		break;
+	case 5:
+		for (size_t i = 0; i < epochs; i++) {
+			cudaDeviceSynchronize();
+			kernel5 << <numBlocks, numThreads, 1024 * 3 + 6 >> >(*d_idata, boardHeight, boardWidth, *d_odata);
+			std::swap(*d_idata, *d_odata);
+		}
+		break;
+	case 6:
+		for (size_t i = 0; i < epochs; i++) {
+			cudaDeviceSynchronize();
+			kernel6 << <numBlocks, numThreads, 1024 * 3 + 6 >> >(*d_idata, boardHeight, boardWidth, *d_odata);
+			std::swap(*d_idata, *d_odata);
+		}
+		break;
+	default:
+		break;
 	}
+	
 	checkCudaErrors(cudaDeviceSynchronize());
 
 }

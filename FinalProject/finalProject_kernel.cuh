@@ -11,6 +11,6 @@
 #include <helper_functions.h>
 
 //extern "C" void  reduce(int boardHeight, int boardWidth, int numThreads, int numBlocks, char* d_idata, char* d_odata, int epochs);
-extern "C" void  reduce(int boardHeight, int boardWidth, int numThreads, int numBlocks, char** d_idata, char** d_odata, int epochs);
+extern "C" void  reduce(int boardHeight, int boardWidth, int numThreads, int numBlocks, char** d_idata, char** d_odata, int epochs, int kernelId);
 
 #endif

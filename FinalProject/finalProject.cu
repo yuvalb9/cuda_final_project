@@ -179,8 +179,9 @@ char*  generateRandomData(int size, int colors)
 
 bool runTest(int argc, char **argv)
 {
-	int boardWidth = BOARD_WIDTH;
-	int boardHeight = BOARD_HIEGHT;
+	
+	int boardWidth = atoi(argv[1]);// BOARD_WIDTH;
+	int boardHeight = atoi(argv[1]);
 	int colors = COLORS;
 	int epochs = EPOCHS;
 	int maxThreads = 256;  // number of threads per block
@@ -188,6 +189,7 @@ bool runTest(int argc, char **argv)
 	long size = boardWidth*boardHeight;
 	int numBlocks = 0;
 	int numThreads = 0;
+	int kernelId = atoi(argv[2]);
 	getNumBlocksAndThreads(size, maxBlocks, maxThreads, numBlocks, numThreads);
 
 	printf("board size %d X %d\n", boardWidth, boardHeight);
@@ -195,6 +197,7 @@ bool runTest(int argc, char **argv)
 	printf("amount of EPOCHS is %d\n", epochs);
 	printf("num of  blocks: %d \n", numBlocks);
 	printf("num of  threads: %d \n", numThreads);
+	printf("kernelId: %d \n", kernelId);
 
 
 	// create random input data on CPU
@@ -225,7 +228,7 @@ bool runTest(int argc, char **argv)
 	t_start = std::chrono::high_resolution_clock::now();
 	for (size_t i = 0; i < 10; i++)
 	{
-		reduce(boardHeight, boardWidth, numThreads, numBlocks, &d_idata, &d_odata, epochs);
+		reduce(boardHeight, boardWidth, numThreads, numBlocks, &d_idata, &d_odata, epochs, kernelId );
 	}
 	t_end = std::chrono::high_resolution_clock::now();
 
